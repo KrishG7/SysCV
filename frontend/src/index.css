@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: #0a0a0a;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  /* Custom thin scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a2a transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 999px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+  /* React Flow dark theme overrides */
+  .react-flow__controls-button {
+    background: #111 !important;
+    border-color: #262626 !important;
+    fill: #666 !important;
+  }
+  .react-flow__controls-button:hover {
+    background: #1a1a1a !important;
+    fill: #fff !important;
+  }
+
+  /* Monaco editor cursor color */
+  .monaco-editor .cursor { border-color: #4dfe90 !important; }
+}

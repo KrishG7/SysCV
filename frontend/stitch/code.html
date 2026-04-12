@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SysCV - System Call Visualizer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-dim": "#00cded",
+                        "on-primary-fixed": "#004821",
+                        "surface-container-highest": "#262626",
+                        "primary-dim": "#38ef84",
+                        "on-secondary": "#005e3e",
+                        "error-dim": "#d7383b",
+                        "inverse-primary": "#006e36",
+                        "on-secondary-container": "#e1ffeb",
+                        "inverse-on-surface": "#565554",
+                        "on-tertiary": "#005361",
+                        "surface-container-lowest": "#000000",
+                        "primary-fixed-dim": "#38ef84",
+                        "on-tertiary-fixed": "#00333d",
+                        "secondary-dim": "#64ecaf",
+                        "error": "#ff716c",
+                        "tertiary-container": "#00dcfe",
+                        "surface-bright": "#2c2c2c",
+                        "surface-container-high": "#201f1f",
+                        "on-secondary-fixed-variant": "#006946",
+                        "secondary-fixed": "#73fbbc",
+                        "background": "#0e0e0e",
+                        "tertiary-fixed-dim": "#00cded",
+                        "secondary-fixed-dim": "#64ecaf",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#adaaaa",
+                        "surface-dim": "#0e0e0e",
+                        "on-tertiary-container": "#004956",
+                        "surface-container-low": "#131313",
+                        "inverse-surface": "#fcf8f8",
+                        "outline-variant": "#494847",
+                        "primary-container": "#29e67c",
+                        "surface-container": "#1a1919",
+                        "on-secondary-fixed": "#00492f",
+                        "on-primary-container": "#004d24",
+                        "tertiary-fixed": "#00dcfe",
+                        "on-primary": "#005d2d",
+                        "outline": "#777575",
+                        "on-background": "#ffffff",
+                        "on-error-container": "#ffa8a3",
+                        "surface-tint": "#4dfe90",
+                        "on-primary-fixed-variant": "#006833",
+                        "surface-variant": "#262626",
+                        "secondary": "#73fbbc",
+                        "surface": "#0e0e0e",
+                        "primary-fixed": "#4dfe90",
+                        "tertiary": "#7ce6ff",
+                        "on-error": "#490006",
+                        "on-surface": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005361",
+                        "primary": "#4dfe90",
+                        "secondary-container": "#006c48"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .scanline-overlay {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #494847; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen w-screen overflow-hidden flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-[#0e0e0e] border-b border-[#262626] flex justify-between items-center w-full px-6 py-3 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black tracking-tighter text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.4)] font-['Space_Grotesk']">SysCV</span>
+<nav class="hidden md:flex gap-6">
+<a class="font-['Space_Grotesk'] tracking-wider uppercase text-sm text-[#4ade80] font-bold transition-all" href="#">Editor</a>
+<a class="font-['Space_Grotesk'] tracking-wider uppercase text-sm text-neutral-400 hover:bg-neutral-800 transition-colors duration-200 px-2 py-1" href="#">Debugger</a>
+<a class="font-['Space_Grotesk'] tracking-wider uppercase text-sm text-neutral-400 hover:bg-neutral-800 transition-colors duration-200 px-2 py-1" href="#">Network</a>
+</nav>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-primary text-on-primary-container px-4 py-1.5 rounded-md font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest active:scale-95 transition-transform flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                Run Code
+            </button>
+<button class="text-neutral-400 border border-outline-variant hover:bg-neutral-800 px-4 py-1.5 rounded-md font-['Space_Grotesk'] font-medium text-xs uppercase tracking-widest active:scale-95 transition-transform">
+                Stop / Clear
+            </button>
+<div class="h-6 w-[1px] bg-outline-variant mx-2"></div>
+<button class="text-neutral-400 hover:bg-neutral-800 p-2 rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="text-neutral-400 hover:bg-neutral-800 p-2 rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<div class="flex-1 flex flex-row overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-[#1a1919] flex flex-col items-center py-6 h-full w-20 border-r border-[#262626]">
+<div class="flex flex-col items-center gap-1 mb-8">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-['Space_Grotesk'] text-[10px] font-medium uppercase text-[#4ade80]">Kernel</span>
+</div>
+<div class="flex flex-col gap-4 w-full px-2">
+<button class="flex flex-col items-center justify-center py-3 bg-neutral-800 text-[#4ade80] border-r-2 border-[#4ade80] transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="list_alt">list_alt</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Trace</span>
+</button>
+<button class="flex flex-col items-center justify-center py-3 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="memory">memory</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Memory</span>
+</button>
+<button class="flex flex-col items-center justify-center py-3 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="developer_board">developer_board</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Registers</span>
+</button>
+<button class="flex flex-col items-center justify-center py-3 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="folder_open">folder_open</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Files</span>
+</button>
+</div>
+<div class="mt-auto flex flex-col gap-4 w-full px-2">
+<button class="flex flex-col items-center justify-center py-3 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="description">description</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Docs</span>
+</button>
+<button class="flex flex-col items-center justify-center py-3 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/50 transition-all duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="help_outline">help_outline</span>
+<span class="font-['Space_Grotesk'] text-[9px] font-medium uppercase">Help</span>
+</button>
+</div>
+</aside>
+<!-- Main Working Area -->
+<main class="flex-1 flex flex-row overflow-hidden bg-surface">
+<!-- Left Pane: Code Editor -->
+<section class="w-3/5 h-full p-4 flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<span class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant">Source Editor</span>
+<div class="bg-surface-container-highest px-2 py-0.5 rounded-sm flex items-center gap-2">
+<div class="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
+<span class="font-mono text-[10px] text-tertiary">main.c</span>
+</div>
+</div>
+<div class="flex gap-4">
+<span class="font-mono text-[10px] text-on-surface-variant">Line 42, Col 12</span>
+<span class="font-mono text-[10px] text-on-surface-variant">UTF-8</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-lowest rounded-xl overflow-hidden relative shadow-2xl">
+<div class="scanline-overlay absolute inset-0 z-10 opacity-30"></div>
+<div class="h-full w-full font-mono text-sm p-6 text-primary-dim bg-[#000000] relative z-0" id="monaco-editor-placeholder">
+<div class="opacity-50 select-none absolute left-2 top-6 flex flex-col text-right w-8 text-neutral-700">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+</div>
+<div class="ml-10">
+<span class="text-tertiary">#include</span> &lt;stdio.h&gt;<br/>
+<span class="text-tertiary">#include</span> &lt;unistd.h&gt;<br/><br/>
+<span class="text-secondary">int</span> <span class="text-primary">main</span>() {<br/>
+                                <span class="text-secondary">char</span> *msg = <span class="text-primary-container">"Hello, SysCV!"</span>;<br/>
+                                <span class="text-primary">write</span>(<span class="text-error">1</span>, msg, <span class="text-error">13</span>);<br/>
+                                <span class="text-primary">return</span> <span class="text-error">0</span>;<br/>
+                            }
+                        </div>
+</div>
+</div>
+</section>
+<!-- Right Pane: Trace Log -->
+<section class="w-2/5 h-full bg-surface-container-low flex flex-col border-l border-[#262626]">
+<div class="p-4 flex items-center justify-between bg-surface-container border-b border-[#262626]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h2 class="font-headline font-bold uppercase tracking-wider text-sm">Syscall Trace</h2>
+</div>
+<button class="text-neutral-500 hover:text-error transition-colors p-1.5 hover:bg-error/10 rounded">
+<span class="material-symbols-outlined text-sm">delete_sweep</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+<!-- Trace Item: execve -->
+<div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-tertiary shadow-lg group hover:bg-surface-container-highest transition-colors">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-tertiary font-bold">execve</span>
+<span class="text-[10px] bg-tertiary/10 text-tertiary px-1.5 py-0.5 rounded border border-tertiary/20 font-bold uppercase">System</span>
+</div>
+<span class="font-mono text-[10px] text-neutral-500">0.001ms</span>
+</div>
+<div class="font-mono text-xs text-on-surface mb-2 bg-surface-container-lowest p-2 rounded border border-outline-variant/30">
+<span class="text-on-surface-variant">args:</span> filename="/usr/bin/syscv", argv=["syscv"], envp=[34 vars]
+                        </div>
+<div class="flex justify-between items-center">
+<span class="font-mono text-xs text-primary-dim">-&gt; 0</span>
+<span class="text-[10px] text-on-surface-variant font-body">Executing binary image</span>
+</div>
+</div>
+<!-- Trace Item: openat -->
+<div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-primary shadow-lg group hover:bg-surface-container-highest transition-colors">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-primary font-bold">openat</span>
+<span class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 font-bold uppercase">IO</span>
+</div>
+<span class="font-mono text-[10px] text-neutral-500">0.042ms</span>
+</div>
+<div class="font-mono text-xs text-on-surface mb-2 bg-surface-container-lowest p-2 rounded border border-outline-variant/30">
+<span class="text-on-surface-variant">args:</span> dfd=AT_FDCWD, filename="/etc/ld.so.cache", flags=O_RDONLY
+                        </div>
+<div class="flex justify-between items-center">
+<span class="font-mono text-xs text-primary-dim">-&gt; 3</span>
+<span class="text-[10px] text-on-surface-variant font-body">Opened file descriptor 3</span>
+</div>
+</div>
+<!-- Trace Item: mmap -->
+<div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-secondary shadow-lg group hover:bg-surface-container-highest transition-colors">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-secondary font-bold">mmap</span>
+<span class="text-[10px] bg-secondary/10 text-secondary px-1.5 py-0.5 rounded border border-secondary/20 font-bold uppercase">Memory</span>
+</div>
+<span class="font-mono text-[10px] text-neutral-500">0.115ms</span>
+</div>
+<div class="font-mono text-xs text-on-surface mb-2 bg-surface-container-lowest p-2 rounded border border-outline-variant/30">
+<span class="text-on-surface-variant">args:</span> addr=NULL, length=158223, prot=PROT_READ, flags=MAP_PRIVATE, fd=3
+                        </div>
+<div class="flex justify-between items-center">
+<span class="font-mono text-xs text-primary-dim">-&gt; 0x7f83b1a2a000</span>
+<span class="text-[10px] text-on-surface-variant font-body">Mapped 158KB to virtual memory</span>
+</div>
+</div>
+<!-- Trace Item: write (Active/Focus) -->
+<div class="bg-surface-container-highest rounded-lg p-4 border-l-4 border-primary shadow-[0_0_20px_rgba(77,254,144,0.1)] ring-1 ring-primary/30">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-primary font-bold text-base">write</span>
+<span class="text-[10px] bg-primary text-on-primary px-1.5 py-0.5 rounded font-bold uppercase">Active</span>
+</div>
+<span class="font-mono text-[10px] text-neutral-400">0.005ms</span>
+</div>
+<div class="font-mono text-xs text-on-surface mb-2 bg-surface-container-lowest p-3 rounded border border-primary/20">
+<div class="grid grid-cols-[60px_1fr] gap-1">
+<span class="text-on-surface-variant">fd:</span> <span class="text-error">1</span> (STDOUT)
+                                <span class="text-on-surface-variant">buf:</span> <span class="text-primary-container">"Hello, SysCV!"</span>
+<span class="text-on-surface-variant">count:</span> <span class="text-error">13</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-outline-variant/20">
+<span class="font-mono text-xs text-primary-dim font-bold">-&gt; 13</span>
+<span class="text-[10px] text-on-surface-variant font-body italic">Writes data from a buffer to a file descriptor.</span>
+</div>
+</div>
+<!-- Trace Item: close -->
+<div class="bg-surface-container-high rounded-lg p-4 border-l-4 border-error shadow-lg group hover:bg-surface-container-highest transition-colors">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-error font-bold">close</span>
+<span class="text-[10px] bg-error/10 text-error px-1.5 py-0.5 rounded border border-error/20 font-bold uppercase">IO</span>
+</div>
+<span class="font-mono text-[10px] text-neutral-500">0.008ms</span>
+</div>
+<div class="font-mono text-xs text-on-surface mb-2 bg-surface-container-lowest p-2 rounded border border-outline-variant/30">
+<span class="text-on-surface-variant">args:</span> fd=3
+                        </div>
+<div class="flex justify-between items-center">
+<span class="font-mono text-xs text-primary-dim">-&gt; 0</span>
+<span class="text-[10px] text-on-surface-variant font-body">Closing file descriptor 3</span>
+</div>
+</div>
+</div>
+<!-- Status Footer -->
+<div class="p-3 bg-surface-container border-t border-[#262626] flex justify-between items-center text-[10px] font-headline tracking-tight uppercase text-neutral-500">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>System OK</span>
+</div>
+<span>Threads: 1</span>
+</div>
+<span>v1.0.4-alpha</span>
+</div>
+</section>
+</main>
+</div>
+</body></html>
