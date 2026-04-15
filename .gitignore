@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+SysCV_Learning_Vault.md
+Team_Work_Distribution.md
+.planning/
+GEMINI.md
