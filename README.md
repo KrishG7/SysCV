@@ -23,11 +23,11 @@ When you run a C program, the kernel is constantly receiving requests from it �
 ## Architecture
 
 ```
-┌─────────────────────┐         WebSocket          ┌──────────────────────────────┐
+┌─────────────────────┐         WebSocket           ┌──────────────────────────────┐
 │   Browser (React)   │ ◄─────────────────────────► │  Go HTTP Server (:8080)      │
-│                     │   JSON syscall events        │                              │
+│                     │   JSON syscall events       │                              │
 │  Monaco Editor      │                             │  runner.go                   │
-│  Syscall Step List  │                             │    gcc -O0 main.c           │
+│  Syscall Step List  │                             │    gcc -O0 main.c            │
 │  Kernel Graph       │                             │    ptrace(PTRACE_SYSCALL)    │
 │  (React Flow)       │                             │                              │
 └─────────────────────┘                             │  tracer_amd64/arm64.go       │
