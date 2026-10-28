@@ -171,7 +171,7 @@ It covers file I/O, memory, process info, `fork`/`wait`, signals, directories, f
 ```
 SysCV/
 ├── backend/
-│   ├── Dockerfile                   # golang:1.22-bullseye + gcc
+│   ├── Dockerfile                   # golang:1.22-bookworm + gcc
 │   ├── cmd/server/main.go           # WebSocket server, session management
 │   └── internal/
 │       ├── runner/runner.go         # gcc compile + ptrace-launch
