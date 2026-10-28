@@ -2,6 +2,7 @@ node_modules/
 dist/
 .DS_Store
 *.log
+.env
 SysCV_Learning_Vault.md
 Team_Work_Distribution.md
 .planning/
