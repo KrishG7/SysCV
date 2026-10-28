@@ -27,7 +27,7 @@ When you run a C program, the kernel is constantly receiving requests from it �
 │   Browser (React)   │ ◄─────────────────────────► │  Go HTTP Server (:8080)      │
 │                     │   JSON syscall events        │                              │
 │  Monaco Editor      │                             │  runner.go                   │
-│  Syscall Step List  │                             │    gcc -static -O0 main.c    │
+│  Syscall Step List  │                             │    gcc -O0 main.c           │
 │  Kernel Graph       │                             │    ptrace(PTRACE_SYSCALL)    │
 │  (React Flow)       │                             │                              │
 └─────────────────────┘                             │  tracer_amd64/arm64.go       │
@@ -42,7 +42,7 @@ When you run a C program, the kernel is constantly receiving requests from it �
 **Key design decisions:**
 - **Linux-in-Docker** — `ptrace` only works on Linux. Running the backend in a container means the tool works identically on macOS, Windows, and Linux with no host dependencies beyond Docker.
 - **Collect then replay** — the program runs to completion before the UI enters "replay mode", so you can step backwards and forwards through the full syscall history.
-- **Static compilation** (`-static -O0`) — reduces dynamic linker noise so the first syscall events you see come from your code, not glibc's startup.
+- **Dynamic linking** (`gcc -O0 -g -lm`) — static glibc adds threading/futex init that can deadlock the tracer, and dynamic binaries make far fewer startup syscalls. The first events you see are still the loader and libc (`brk`, `mmap`, `openat` of `libc.so.6`) before `main()` runs.
 
 ---
 
@@ -144,6 +144,28 @@ fflush(stdout);              // forces a write() immediately
 
 ---
 
+## Testing
+
+With the backend running (`docker compose up -d`), the end-to-end suite traces ten real C programs through the WebSocket and checks the syscalls and program output:
+
+```bash
+cd tests
+npm install
+node test_comprehensive.js
+```
+
+It covers file I/O, memory, process info, `fork`/`wait`, signals, directories, file descriptors, `exec`, a stdout flood and a crash (SIGSEGV). The frontend is checked with `cd frontend && npm run lint && npm run build`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Port 8080 is already in use | Change the port mapping in `docker-compose.yml` (for example `"8099:8080"`) and start the frontend with `VITE_WS_URL=ws://localhost:8099/trace npm run dev` |
+| `docker compose` fails on `apt-get` | Make sure `backend/Dockerfile` uses `golang:1.22-bookworm`. Debian bullseye is end-of-life and its package mirrors no longer serve security updates |
+| The UI says it is offline | The backend is not running or is on another port. The page reconnects every 2.5 s by itself |
+
+---
+
 ## Project Structure
 
 ```
@@ -155,8 +177,8 @@ SysCV/
 │       ├── runner/runner.go         # gcc compile + ptrace-launch
 │       ├── syscalls/
 │       │   ├── types.go             # SyscallDef, ArgDef, TypeXxx
-│       │   ├── table_amd64.go       # 50+ syscall definitions (x86-64)
-│       │   └── table_arm64.go       # 50+ syscall definitions (ARM64)
+│       │   ├── table_amd64.go       # ~60 syscall definitions (x86-64)
+│       │   └── table_arm64.go       # ~40 syscall definitions (ARM64)
 │       └── tracer/
 │           ├── tracer_amd64.go      # ptrace loop, register reads (x86-64)
 │           ├── tracer_arm64.go      # ptrace loop, register reads (ARM64)
@@ -176,7 +198,7 @@ SysCV/
 ## How the Tracer Works
 
 ```
-1. runner.Compile()     gcc -static -O0 prog.c -o prog
+1. runner.Compile()     gcc -O0 -g -lm prog.c -o prog
 2. runner.StartTrace()  exec with SysProcAttr{Ptrace: true}
 3. TraceLoop()
    ├── Wait for SIGTRAP (child stopped at first instruction)
@@ -202,7 +224,7 @@ The ARM64 path reads `X8` for the syscall number and `X0–X5` for arguments.
 | Limitation | Reason |
 |-----------|--------|
 | C only | gcc is the only compiler in the container |
-| glibc startup noise | Even `-static` binaries call `brk`/`uname`/`readlinkat` before `main()` |
+| glibc startup noise | Every binary calls `brk`/`mmap`/`openat` (the loader and `libc.so.6`) before `main()` |
 | Single-process tracing | `fork()` creates a child that the tracer doesn't follow |
 | No secure sandbox | Docker isolation, not gVisor/Firecracker — treat as a dev tool only |
 | Local only | No auth, no multi-tenancy, not suitable for public deployment |

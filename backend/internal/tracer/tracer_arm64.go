@@ -138,7 +138,7 @@ func TraceLoop(cmd *exec.Cmd, stream chan<- interface{}, controlChan <-chan stri
 						hArg := HydratedArg{
 							Name:     argDef.Name,
 							Type:     string(argDef.Type),
-							RawValue: rawArgs[i],
+							RawValue: int64(rawArgs[i]),
 						}
 						if argDef.Type == syscalls.TypeString {
 							hArg.StrValue = ReadString(pid, uintptr(rawArgs[i]), 256)

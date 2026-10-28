@@ -3,7 +3,7 @@ package tracer
 type HydratedArg struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
-	RawValue uint64 `json:"raw_value"`
+	RawValue int64  `json:"raw_value"` // signed: -100 (AT_FDCWD) must survive JSON as an exact number
 	StrValue string `json:"str_value,omitempty"`
 }
 

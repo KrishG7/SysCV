@@ -280,17 +280,19 @@ export default function App() {
     return c;
   }, [steps]);
 
+  const collectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── WebSocket — auto-reconnects every 2.5 s while offline ─────────────────
-  const connectSocket = useCallback(() => {
+  const connectSocket = useCallback(function connect() {
     if (reconnectTimer.current) { clearTimeout(reconnectTimer.current); reconnectTimer.current = null; }
     if (wsRef.current) wsRef.current.close();
 
-    const ws = new WebSocket('ws://localhost:8080/trace');
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL ?? 'ws://localhost:8080/trace');
     ws.onopen = () => setIsConnected(true);
     ws.onclose = () => {
       setIsConnected(false);
       setPhase(p => p === 'collecting' ? 'idle' : p);
-      reconnectTimer.current = setTimeout(() => connectSocket(), 2500);
+      reconnectTimer.current = setTimeout(() => connect(), 2500);
     };
     ws.onerror = () => setPhase(p => p === 'collecting' ? 'idle' : p);
     ws.onmessage = (msg) => {
@@ -315,8 +317,6 @@ export default function App() {
     connectSocket();
     return () => { if (reconnectTimer.current) clearTimeout(reconnectTimer.current); wsRef.current?.close(); };
   }, [connectSocket]);
-
-  const collectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleRun = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) { connectSocket(); setTimeout(handleRun, 600); return; }
